@@ -81,7 +81,7 @@ class MediaExtractor {
         val info = YoutubeDL.getInstance().getInfo(request)
 
         val title = info.title ?: "$platform Video"
-        val uploader = info.uploader ?: info.channel ?: "$platform Creator"
+        val uploader = info.uploader ?: "$platform Creator"
         
         // Enhance HD Thumbnail for YouTube if applicable
         val videoIdRegex = Regex("[?&]v=([a-zA-Z0-9_-]{11})|youtu\\.be/([a-zA-Z0-9_-]{11})")
@@ -92,20 +92,15 @@ class MediaExtractor {
             info.thumbnail ?: ""
         }
 
-        // Reliably determine channel avatar
-        val uploaderUrl = info.uploaderUrl ?: info.channelUrl ?: ""
-        val handle = when {
-            uploaderUrl.contains("@") -> uploaderUrl.substringAfter("@").substringBefore("/")
-            uploaderUrl.contains("/channel/") -> uploaderUrl.substringAfterLast("/")
-            else -> uploader.replace(" ", "").replace(Regex("[^a-zA-Z0-9_.-]"), "")
-        }
+        // Reliably determine channel avatar from clean author name
+        val handle = uploader.replace(" ", "").replace(Regex("[^a-zA-Z0-9_.-]"), "")
         val site = when (platform.lowercase()) {
             "youtube" -> "youtube"
             "instagram" -> "instagram"
             "facebook" -> "facebook"
             else -> "github"
         }
-        val avatarUrl = if (handle.isNotEmpty()) "https://unavatar.io/$site/$handle" else ""
+        val avatarUrl = if (handle.isNotEmpty() && handle != "YouTubeCreator") "https://unavatar.io/$site/$handle" else ""
 
         val formats = if (platform == "YouTube" || videoId.isNotEmpty()) {
             listOf(
