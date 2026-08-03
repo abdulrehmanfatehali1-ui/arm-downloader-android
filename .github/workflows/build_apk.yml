@@ -23,6 +23,9 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Gradle System
         uses: gradle/actions/setup-gradle@v3
         with:
