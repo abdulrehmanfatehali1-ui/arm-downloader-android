@@ -347,13 +347,13 @@ class MainActivity : AppCompatActivity() {
         scope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    YoutubeDL.getInstance().execute(request, { progress, eta ->
+                    YoutubeDL.getInstance().execute(request, processId, callback = { progress: Float, eta: Long, _: String ->
                         scope.launch {
                             downloadProgressBar.progress = progress.toInt()
                             tvProgress.text = "${progress.toInt()}%"
                             tvDownloadStatus.text = if (eta > 0) "Downloading (ETA: ${eta}s)..." else "Downloading..."
                         }
-                    }, processId)
+                    })
                 }
                 tvDownloadStatus.text = "Download Complete! Saved in Downloads/ARM/"
                 downloadProgressBar.progress = 100
