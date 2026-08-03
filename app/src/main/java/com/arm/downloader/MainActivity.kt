@@ -3,15 +3,18 @@ package com.arm.downloader
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.google.android.material.tabs.TabLayout
+import com.yausername.youtubedl_android.FFmpeg
+import com.yausername.youtubedl_android.YoutubeDL
+import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.*
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTitle: TextView
     private lateinit var btnSaveThumbnail: Button
     private lateinit var btnSaveAvatar: Button
-    private lateinit var rvFormats: RecyclerView
+    private lateinit var layoutFormats: LinearLayout
     private lateinit var tvSelectQuality: TextView
     private lateinit var btnDownload: Button
     private lateinit var layoutProgress: LinearLayout
@@ -51,9 +54,26 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        initNativeEngine()
         bindViews()
         setupTabs()
         setupButtons()
+    }
+
+    private fun initNativeEngine() {
+        try {
+            YoutubeDL.getInstance().init(applicationContext)
+            FFmpeg.getInstance().init(applicationContext)
+            scope.launch(Dispatchers.IO) {
+                try {
+                    YoutubeDL.getInstance().updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel.STABLE)
+                } catch (e: Exception) {
+                    // ignore network error during silent update check
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ARM", "Failed to init youtubedl-android", e)
+        }
     }
 
     private fun bindViews() {
@@ -72,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         tvTitle         = findViewById(R.id.tvTitle)
         btnSaveThumbnail = findViewById(R.id.btnSaveThumbnail)
         btnSaveAvatar   = findViewById(R.id.btnSaveAvatar)
-        rvFormats       = findViewById(R.id.rvFormats)
+        layoutFormats   = findViewById(R.id.layoutFormats)
         tvSelectQuality = findViewById(R.id.tvSelectQuality)
         btnDownload     = findViewById(R.id.btnDownload)
         layoutProgress  = findViewById(R.id.layoutProgress)
@@ -150,7 +170,7 @@ class MainActivity : AppCompatActivity() {
             val info = currentMediaInfo ?: return@setOnClickListener
             if (info.avatarUrl.isNotEmpty()) {
                 DownloadHelper.download(this, info.avatarUrl,
-                    "pfp_${info.uploader}_${System.currentTimeMillis()}.jpg", "image/jpeg")
+                    "pfp_${info.uploader.replace(Regex("[^a-zA-Z0-9_.-]"), "")}_${System.currentTimeMillis()}.jpg", "image/jpeg")
             }
         }
     }
@@ -162,7 +182,7 @@ class MainActivity : AppCompatActivity() {
             2 -> "TikTok"
             3 -> "Instagram"
             4 -> "Facebook"
-            5 -> "YouTube" // Thumbnail - try YouTube first
+            5 -> "YouTube" // Thumbnail mode
             else -> extractor.detectPlatform(url)
         }
 
@@ -211,7 +231,7 @@ class MainActivity : AppCompatActivity() {
             Glide.with(this).load(info.thumbnailUrl).into(imgThumb)
         }
 
-        // Avatar
+        // Avatar with fallback
         val avatarSrc = info.avatarUrl.ifEmpty {
             "https://ui-avatars.com/api/?name=${info.uploader}&background=8b5cf6&color=fff&size=128"
         }
@@ -222,59 +242,127 @@ class MainActivity : AppCompatActivity() {
         tvTitle.text = if (profileOnly) "${info.platform} Profile" else info.title
 
         if (profileOnly || currentTab == 5) {
-            // Thumbnail/Profile mode — only show save buttons
             tvSelectQuality.visibility = View.GONE
-            rvFormats.visibility = View.GONE
+            layoutFormats.visibility = View.GONE
             btnDownload.visibility = View.GONE
         } else {
-            // Video mode — show quality cards
             tvSelectQuality.visibility = View.VISIBLE
-            rvFormats.visibility = View.VISIBLE
+            layoutFormats.visibility = View.VISIBLE
             btnDownload.visibility = View.VISIBLE
 
-            val adapter = FormatAdapter(info.formats) { fmt ->
-                selectedFormat = fmt
-            }
-            rvFormats.layoutManager = LinearLayoutManager(this)
-            rvFormats.adapter = adapter
-            selectedFormat = info.formats.firstOrNull()
+            renderFormats(info.formats)
         }
     }
 
-    // ─── Download ─────────────────────────────────────────────────────────────
+    // ─── Render Formats cleanly in LinearLayout (No RecyclerView clipping bugs!) ──
+    private fun renderFormats(formats: List<FormatItem>) {
+        layoutFormats.removeAllViews()
+        val cardViews = mutableListOf<View>()
+        selectedFormat = formats.firstOrNull()
+
+        formats.forEachIndexed { index, fmt ->
+            val view = layoutInflater.inflate(R.layout.item_format_card, layoutFormats, false)
+            val badge = view.findViewById<TextView>(R.id.tvQualityBadge)
+            val label = view.findViewById<TextView>(R.id.tvQualityLabel)
+            val size  = view.findViewById<TextView>(R.id.tvQualitySize)
+            val selectedIcon = view.findViewById<ImageView>(R.id.ivSelected)
+            val root = view.findViewById<View>(R.id.cardRoot)
+
+            badge.text = fmt.qualityBadge
+            label.text = fmt.qualityLabel
+            size.text = fmt.sizeEstimate
+
+            if (index == 0) {
+                selectedIcon.visibility = View.VISIBLE
+                root.setBackgroundResource(R.drawable.format_card_selected_bg)
+            } else {
+                selectedIcon.visibility = View.INVISIBLE
+                root.setBackgroundResource(R.drawable.format_card_bg)
+            }
+
+            view.setOnClickListener {
+                selectedFormat = fmt
+                cardViews.forEachIndexed { i, v ->
+                    val icon = v.findViewById<ImageView>(R.id.ivSelected)
+                    val r    = v.findViewById<View>(R.id.cardRoot)
+                    if (formats[i] == fmt) {
+                        icon.visibility = View.VISIBLE
+                        r.setBackgroundResource(R.drawable.format_card_selected_bg)
+                    } else {
+                        icon.visibility = View.INVISIBLE
+                        r.setBackgroundResource(R.drawable.format_card_bg)
+                    }
+                }
+            }
+
+            cardViews.add(view)
+            layoutFormats.addView(view)
+        }
+    }
+
+    // ─── Download (Direct via DownloadManager for TikTok, Native yt-dlp for YT/IG/FB) ──
     private fun startDownload(info: MediaInfo, fmt: FormatItem) {
+        // If we already have a direct link (e.g., Tikwm watermark-free MP4/MP3)
+        if (!fmt.directUrl.isNullOrEmpty()) {
+            val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
+            val mime = DownloadHelper.mimeType(fmt.isAudio, fmt.directUrl)
+            DownloadHelper.download(this, fmt.directUrl, filename, mime)
+            return
+        }
+
+        // Otherwise invoke Native yt-dlp Engine!
         layoutProgress.visibility = View.VISIBLE
         btnDownload.isEnabled = false
-        tvDownloadStatus.text = "Resolving download link..."
-        downloadProgressBar.isIndeterminate = true
+        tvDownloadStatus.text = "Initializing native yt-dlp engine..."
+        downloadProgressBar.isIndeterminate = false
+        downloadProgressBar.progress = 0
+        tvProgress.text = "0%"
 
+        val downloadDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "ARM")
+        if (!downloadDir.exists()) downloadDir.mkdirs()
+
+        val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
+        val targetFile = File(downloadDir, filename)
+        if (targetFile.exists()) targetFile.delete()
+
+        val request = YoutubeDLRequest(info.originalUrl).apply {
+            addOption("-o", targetFile.absolutePath)
+            addOption("--no-mtime")
+            if (fmt.isAudio) {
+                addOption("-x")
+                addOption("--audio-format", "mp3")
+                addOption("--audio-quality", "0")
+            } else {
+                when (fmt.cobaltQuality) {
+                    "2160" -> addOption("-f", "bestvideo[height<=2160]+bestaudio/best[height<=2160]/best")
+                    "1080" -> addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
+                    "720"  -> addOption("-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best")
+                    "480"  -> addOption("-f", "bestvideo[height<=480]+bestaudio/best[height<=480]/best")
+                    else   -> addOption("-f", "bestvideo+bestaudio/best")
+                }
+            }
+        }
+
+        val processId = "DL_${System.currentTimeMillis()}"
         scope.launch {
             try {
-                val downloadUrl = extractor.resolveDownloadUrl(
-                    info.originalUrl,
-                    fmt.cobaltQuality,
-                    fmt.isAudio,
-                    fmt.directUrl
-                )
-
-                if (downloadUrl.isEmpty()) {
-                    toast("Could not get download link. Try another quality.")
-                    layoutProgress.visibility = View.GONE
-                    btnDownload.isEnabled = true
-                    return@launch
+                withContext(Dispatchers.IO) {
+                    YoutubeDL.getInstance().execute(request, { progress, eta ->
+                        scope.launch {
+                            downloadProgressBar.progress = progress.toInt()
+                            tvProgress.text = "${progress.toInt()}%"
+                            tvDownloadStatus.text = if (eta > 0) "Downloading (ETA: ${eta}s)..." else "Downloading..."
+                        }
+                    }, processId)
                 }
-
-                val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
-                val mime = DownloadHelper.mimeType(fmt.isAudio)
-                DownloadHelper.download(this@MainActivity, downloadUrl, filename, mime)
-
-                tvDownloadStatus.text = "Download queued!"
-                downloadProgressBar.isIndeterminate = false
+                tvDownloadStatus.text = "Download Complete! Saved in Downloads/ARM/"
                 downloadProgressBar.progress = 100
                 tvProgress.text = "100%"
+                toast("Saved to Downloads/ARM/$filename")
                 btnDownload.isEnabled = true
             } catch (e: Exception) {
-                toast("Download error: ${e.message}")
+                android.util.Log.e("ARM", "Download failure", e)
+                toast("Download failed: ${e.message}")
                 layoutProgress.visibility = View.GONE
                 btnDownload.isEnabled = true
             }

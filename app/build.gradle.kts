@@ -53,4 +53,9 @@ dependencies {
 
     // JSON
     implementation("org.json:json:20231013")
+
+    // yt-dlp & FFmpeg Native Android Engine
+    val youtubedlAndroid = "0.18.1"
+    implementation("io.github.junkfood02.youtubedl-android:library:$youtubedlAndroid")
+    implementation("io.github.junkfood02.youtubedl-android:ffmpeg:$youtubedlAndroid")
 }

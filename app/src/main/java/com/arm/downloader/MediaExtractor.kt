@@ -1,11 +1,11 @@
 package com.arm.downloader
 
+import com.yausername.youtubedl_android.YoutubeDL
+import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
@@ -23,21 +23,23 @@ class MediaExtractor {
         url.contains("tiktok.com") -> "TikTok"
         url.contains("instagram.com") -> "Instagram"
         url.contains("facebook.com") || url.contains("fb.watch") -> "Facebook"
-        else -> "Unknown"
+        else -> "Universal (yt-dlp)"
     }
 
     // ─── Main Extractor ───────────────────────────────────────────────────────
     suspend fun extractInfo(url: String, platform: String): MediaInfo = withContext(Dispatchers.IO) {
-        return@withContext when (platform) {
-            "TikTok" -> extractTikTok(url)
-            "YouTube" -> extractYouTube(url)
-            "Instagram" -> extractCobalt(url, "Instagram")
-            "Facebook" -> extractCobalt(url, "Facebook")
-            else -> extractCobalt(url, "Unknown")
+        if (platform == "TikTok") {
+            try {
+                return@withContext extractTikTok(url)
+            } catch (e: Exception) {
+                // If Tikwm ever fails, gracefully fall back to native yt-dlp below!
+                android.util.Log.w("ARM", "Tikwm fallback to yt-dlp: ${e.message}")
+            }
         }
+        return@withContext extractWithYtDlp(url, platform)
     }
 
-    // ─── TikTok via Tikwm ─────────────────────────────────────────────────────
+    // ─── TikTok via Tikwm (Instant & No-Watermark) ─────────────────────────────
     private fun extractTikTok(url: String): MediaInfo {
         val apiUrl = "https://www.tikwm.com/api/?url=${url.encodeUrl()}"
         val req = Request.Builder().url(apiUrl)
@@ -73,97 +75,56 @@ class MediaExtractor {
         return MediaInfo(title, cover, uploaderName, avatarUrl, "TikTok", formats, url)
     }
 
-    // ─── YouTube via noembed + Cobalt ─────────────────────────────────────────
-    private fun extractYouTube(url: String): MediaInfo {
-        // Get metadata via noembed
-        val noembedUrl = "https://noembed.com/embed?url=${url.encodeUrl()}"
-        val metaReq = Request.Builder().url(noembedUrl)
-            .addHeader("User-Agent", "ARM-Downloader/2.0")
-            .build()
-        val metaBody = try {
-            val resp = client.newCall(metaReq).execute()
-            resp.body?.string() ?: "{}"
-        } catch (e: Exception) { "{}" }
+    // ─── Native yt-dlp Extraction (YouTube, Instagram, FB, Universal) ──────────
+    private fun extractWithYtDlp(url: String, platform: String): MediaInfo {
+        val request = YoutubeDLRequest(url)
+        val info = YoutubeDL.getInstance().getInfo(request)
 
-        val meta = JSONObject(metaBody)
-        val title = meta.optString("title", "YouTube Video")
-        val author = meta.optString("author_name", "YouTube Creator")
-        val thumbnail = meta.optString("thumbnail_url", "")
-
-        // Extract video ID for avatar
+        val title = info.title ?: "$platform Video"
+        val uploader = info.uploader ?: info.channel ?: "$platform Creator"
+        
+        // Enhance HD Thumbnail for YouTube if applicable
         val videoIdRegex = Regex("[?&]v=([a-zA-Z0-9_-]{11})|youtu\\.be/([a-zA-Z0-9_-]{11})")
         val videoId = videoIdRegex.find(url)?.groupValues?.firstOrNull { it.length == 11 } ?: ""
-        val channelUrl = meta.optString("author_url", "")
-        val channelId = channelUrl.substringAfterLast("/")
-
-        val formats = listOf(
-            FormatItem("2160", "4K Ultra HD", "4K", "~ 500 MB", "2160", false),
-            FormatItem("1080", "Full HD", "1080p", "~ 100 MB", "1080", false),
-            FormatItem("720", "HD Ready", "720p", "~ 50 MB", "720", false),
-            FormatItem("480", "Standard", "480p", "~ 25 MB", "480", false),
-            FormatItem("360", "Low Quality", "360p", "~ 12 MB", "360", false),
-            FormatItem("mp3", "Audio Only", "MP3", "~ 5 MB", "mp3", true)
-        )
-
-        val hdThumb = if (videoId.isNotEmpty())
+        val hdThumb = if (videoId.isNotEmpty()) {
             "https://img.youtube.com/vi/$videoId/maxresdefault.jpg"
-        else thumbnail
-
-        return MediaInfo(title, hdThumb, author, "", "YouTube", formats, url)
-    }
-
-    // ─── Instagram / Facebook via Cobalt ─────────────────────────────────────
-    private fun extractCobalt(url: String, platform: String): MediaInfo {
-        val formats = listOf(
-            FormatItem("1080", "Full HD", "1080p", "~ 80 MB", "1080", false),
-            FormatItem("720", "HD Ready", "720p", "~ 40 MB", "720", false),
-            FormatItem("480", "Standard", "480p", "~ 20 MB", "480", false),
-            FormatItem("mp3", "Audio Only", "MP3", "~ 4 MB", "mp3", true)
-        )
-        return MediaInfo("$platform Video", "", platform, "", platform, formats, url)
-    }
-
-    // ─── Cobalt Download URL Resolver ─────────────────────────────────────────
-    suspend fun resolveDownloadUrl(mediaUrl: String, quality: String, isAudio: Boolean, directUrl: String?): String =
-        withContext(Dispatchers.IO) {
-            // If TikTok direct URL — return as-is
-            if (!directUrl.isNullOrEmpty()) return@withContext directUrl
-
-            // Call Cobalt API
-            val jsonBody = JSONObject().apply {
-                put("url", mediaUrl)
-                put("videoQuality", if (isAudio) "max" else quality)
-                put("audioFormat", "mp3")
-                put("downloadMode", if (isAudio) "audio" else "auto")
-                put("filenameStyle", "pretty")
-            }.toString()
-
-            val body = jsonBody.toRequestBody("application/json".toMediaType())
-            val req = Request.Builder()
-                .url("https://api.cobalt.tools/")
-                .post(body)
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("User-Agent", "ARM-Downloader/2.0")
-                .build()
-
-            val resp = client.newCall(req).execute()
-            val respBody = resp.body?.string() ?: throw Exception("Cobalt returned empty response")
-            val json = JSONObject(respBody)
-            val status = json.optString("status")
-
-            return@withContext when (status) {
-                "stream", "redirect", "tunnel" -> json.optString("url", "")
-                "picker" -> {
-                    val picker = json.optJSONArray("picker")
-                    picker?.optJSONObject(0)?.optString("url") ?: ""
-                }
-                else -> {
-                    val errMsg = json.optJSONObject("error")?.optString("code") ?: "Unknown Cobalt error"
-                    throw Exception("Cobalt error: $errMsg")
-                }
-            }
+        } else {
+            info.thumbnail ?: ""
         }
+
+        // Reliably determine channel avatar
+        val uploaderUrl = info.uploaderUrl ?: info.channelUrl ?: ""
+        val handle = when {
+            uploaderUrl.contains("@") -> uploaderUrl.substringAfter("@").substringBefore("/")
+            uploaderUrl.contains("/channel/") -> uploaderUrl.substringAfterLast("/")
+            else -> uploader.replace(" ", "").replace(Regex("[^a-zA-Z0-9_.-]"), "")
+        }
+        val site = when (platform.lowercase()) {
+            "youtube" -> "youtube"
+            "instagram" -> "instagram"
+            "facebook" -> "facebook"
+            else -> "github"
+        }
+        val avatarUrl = if (handle.isNotEmpty()) "https://unavatar.io/$site/$handle" else ""
+
+        val formats = if (platform == "YouTube" || videoId.isNotEmpty()) {
+            listOf(
+                FormatItem("2160", "4K Ultra HD Video", "4K", "Direct yt-dlp stream", "2160", false),
+                FormatItem("1080", "Full HD 1080p Video", "1080p", "Direct yt-dlp stream", "1080", false),
+                FormatItem("720", "HD Ready 720p Video", "720p", "Direct yt-dlp stream", "720", false),
+                FormatItem("480", "Standard 480p Video", "480p", "Direct yt-dlp stream", "480", false),
+                FormatItem("mp3", "High Quality Audio", "MP3", "320kbps MP3 Audio", "mp3", true)
+            )
+        } else {
+            listOf(
+                FormatItem("1080", "Best HD Quality", "HD", "Direct yt-dlp stream", "1080", false),
+                FormatItem("720", "Standard Quality", "SD", "Direct yt-dlp stream", "720", false),
+                FormatItem("mp3", "Audio Only", "MP3", "MP3 Audio Extract", "mp3", true)
+            )
+        }
+
+        return MediaInfo(title, hdThumb, uploader, avatarUrl, platform, formats, url)
+    }
 
     // ─── Profile Picture ─────────────────────────────────────────────────────
     fun getProfileAvatarUrl(username: String, platform: String): String {

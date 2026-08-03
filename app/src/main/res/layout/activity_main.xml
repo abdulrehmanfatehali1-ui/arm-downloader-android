@@ -164,7 +164,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
-            android:text="Fetching media info..."
+            android:text="Extracting media with yt-dlp..."
             android:textColor="@color/accent_purple"
             android:textSize="13sp"
             android:visibility="gone" />
@@ -179,7 +179,7 @@
             android:layout_marginTop="12dp"
             android:layout_marginStart="12dp"
             android:layout_marginEnd="12dp"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="32dp">
 
             <!-- Thumbnail -->
             <ImageView
@@ -213,8 +213,8 @@
 
                 <ImageView
                     android:id="@+id/imgAvatar"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
                     android:scaleType="centerCrop"
                     android:background="@color/bg_input"
                     android:contentDescription="Creator Avatar" />
@@ -224,7 +224,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
-                    android:layout_marginStart="10dp">
+                    android:layout_marginStart="12dp">
 
                     <TextView
                         android:id="@+id/tvUploader"
@@ -269,12 +269,12 @@
                 android:maxLines="2"
                 android:ellipsize="end" />
 
-            <!-- Format Cards RecyclerView -->
+            <!-- Format Cards Container (Replaces RecyclerView to stop clipping bugs) -->
             <TextView
                 android:id="@+id/tvSelectQuality"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Select Quality"
+                android:text="Select Quality (Direct yt-dlp)"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -283,11 +283,11 @@
                 android:layout_marginBottom="8dp"
                 android:visibility="gone" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvFormats"
+            <LinearLayout
+                android:id="@+id/layoutFormats"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
+                android:orientation="vertical"
                 android:visibility="gone" />
 
             <!-- Download Button -->
@@ -311,7 +311,7 @@
                 android:orientation="vertical"
                 android:background="@color/bg_card"
                 android:padding="16dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:visibility="gone">
 
                 <ProgressBar
