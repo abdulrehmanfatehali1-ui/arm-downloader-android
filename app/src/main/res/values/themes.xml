@@ -1,13 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.ARMDownloader" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/accent_purple</item>
-        <item name="colorPrimaryVariant">@color/accent_blue</item>
         <item name="colorSecondary">@color/accent_cyan</item>
         <item name="colorSurface">@color/bg_card</item>
-        <item name="colorBackground">@color/bg_primary</item>
         <item name="android:colorBackground">@color/bg_primary</item>
         <item name="android:statusBarColor">@color/bg_primary</item>
         <item name="android:navigationBarColor">@color/bg_primary</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="tabStyle">@style/Widget.Material3.TabLayout</item>
     </style>
 </resources>
