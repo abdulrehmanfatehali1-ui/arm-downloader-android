@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
-import android.os.Environment
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -80,14 +79,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        initNativeEngine()
+        initEngine()
         bindViews()
         setupSidebar()
         setupSocialChips()
         setupButtons()
     }
 
-    private fun initNativeEngine() {
+    private fun initEngine() {
         try {
             YoutubeDL.getInstance().init(applicationContext)
             FFmpeg.getInstance().init(applicationContext)
@@ -99,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("ARM", "Failed to init native engine", e)
+            android.util.Log.e("ARM", "Failed to init downloader", e)
         }
     }
 
@@ -161,27 +160,23 @@ class MainActivity : AppCompatActivity() {
                     drawerLayout.closeDrawer(GravityCompat.START)
                     DownloadHelper.openGallery(this)
                 }
+                R.id.nav_history -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    DownloadHelper.showHistoryDialog(this)
+                }
                 R.id.nav_platforms -> {
                     drawerLayout.closeDrawer(GravityCompat.START)
                     showInfoDialog("Supported Platforms 🎬",
-                        "ARM DOWNLOADER PRO natively extracts high definition media from:\n\n" +
+                        "ARM DOWNLOADER PRO extracts high speed media from:\n\n" +
                         "📺 YouTube: Up to 4K Ultra HD Video & 320kbps MP3 Audio.\n" +
                         "🎵 TikTok: HD No-Watermark MP4 & original sound extraction.\n" +
-                        "📸 Instagram: Reels, IGTV, Photos & carousel videos.\n" +
-                        "📘 Facebook: Public Watch videos, Shorts & clips.\n\n" +
-                        "✔ All videos save directly to your phone Gallery!")
-                }
-                R.id.nav_ytdlp_status, R.id.nav_ffmpeg_status -> {
-                    drawerLayout.closeDrawer(GravityCompat.START)
-                    showInfoDialog("PC-Level Native Engine ⚡",
-                        "Your app runs entirely offline with embedded PC libraries:\n\n" +
-                        "🔹 yt-dlp Core: v0.18.1 (Autonomous video decryption & stream parsing)\n" +
-                        "🔹 FFmpeg: Multi-threaded stream combiner (ARM64, ARMv7, x86, x86_64)\n\n" +
-                        "No external servers or Cobalt APIs are used. You are immune to server crashes or API bans!")
+                        "📸 Instagram: Reels, IGTV, Photos & clips.\n" +
+                        "📘 Facebook: Public Watch videos & Shorts.\n\n" +
+                        "✔ All downloads save directly to your phone Gallery!")
                 }
                 R.id.nav_about -> {
                     drawerLayout.closeDrawer(GravityCompat.START)
-                    showInfoDialog("About ARM DOWNLOADER", "Version 2.0 Pro\nBuilt with Native Kotlin, Material3 & yt-dlp Engine.\nDeveloped for maximum performance & visual excellence.")
+                    showInfoDialog("About ARM DOWNLOADER", "Version 2.0 Pro\nHigh Speed Media & Video Saver.\nDesigned for ultra fast downloads and studio quality offline viewing.")
                 }
             }
             true
@@ -216,7 +211,6 @@ class MainActivity : AppCompatActivity() {
         chipThumb.setOnClickListener { selectChip(chipThumb, "Thumbnail", "Paste any video link to extract HD thumbnail...") }
         chipPfp.setOnClickListener { selectChip(chipPfp, "PFP", "Enter creator username (e.g. @MrBeast or username)...") }
 
-        // Sub-buttons for PFP mode
         val pfpBtns = listOf(btnPfpTiktok, btnPfpYt, btnPfpInsta, btnPfpFb)
         fun selectPfpBtn(btn: Button, platform: String) {
             pfpPlatform = platform
@@ -286,7 +280,7 @@ class MainActivity : AppCompatActivity() {
             "TikTok"    -> "TikTok"
             "Instagram" -> "Instagram"
             "Facebook"  -> "Facebook"
-            "Thumbnail" -> "YouTube" // Try YT default for thumbnails
+            "Thumbnail" -> "YouTube"
             else        -> extractor.detectPlatform(url)
         }
 
@@ -303,7 +297,7 @@ class MainActivity : AppCompatActivity() {
                 showLoading(false)
             } catch (e: Exception) {
                 showLoading(false)
-                toast("Error: ${e.message}")
+                toast("Error extracting video. Check your connection or link!")
             }
         }
     }
@@ -349,7 +343,6 @@ class MainActivity : AppCompatActivity() {
             layoutFormats.visibility = View.VISIBLE
             layoutTransformingBtn.visibility = View.VISIBLE
 
-            // Reset Transforming Button State
             resetTransformingButton()
             renderFormats(info.formats)
         }
@@ -401,20 +394,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── Transforming Download Progress Button & Gallery Saving ────────────────
+    // ─── Ultra Fast Download & Gallery Saving ──────────────────────────────────
     private fun startTransformingDownload(info: MediaInfo, fmt: FormatItem) {
         isDownloading = true
         layoutTransformingBtn.setBackgroundResource(R.drawable.btn_progress_bg)
         downloadProgressBar.progress = 0
-        tvTransformingText.text = "⏳ Starting Download to Gallery..."
+        tvTransformingText.text = "⏳ Starting High Speed Download..."
 
-        // If direct link available (e.g. TikTok No-Watermark from Tikwm)
         if (!fmt.directUrl.isNullOrEmpty()) {
             val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
             val mime = DownloadHelper.mimeType(fmt.isAudio, fmt.directUrl)
             DownloadHelper.download(this, fmt.directUrl, filename, mime)
             
-            // Simulate quick button completion for direct queues
             scope.launch {
                 delay(1500)
                 setDownloadSuccessState("✔ Queued Directly to Gallery!")
@@ -422,26 +413,32 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Native PC Engine Execution
         val targetDir = DownloadHelper.getGalleryDirectory(fmt.isAudio)
         val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
         val targetFile = File(targetDir, filename)
         if (targetFile.exists()) targetFile.delete()
 
+        // High speed & resilience configuration (no warnings to block execution)
         val request = YoutubeDLRequest(info.originalUrl).apply {
             addOption("-o", targetFile.absolutePath)
             addOption("--no-mtime")
+            addOption("--no-warnings")
+            addOption("--ignore-errors")
+            addOption("--no-check-certificate")
+            addOption("--no-playlist")
+            addOption("--concurrent-fragments", "8")
+            addOption("--retries", "10")
             if (fmt.isAudio) {
                 addOption("-x")
                 addOption("--audio-format", "mp3")
                 addOption("--audio-quality", "0")
             } else {
                 when (fmt.cobaltQuality) {
-                    "2160" -> addOption("-f", "bestvideo[height<=2160]+bestaudio/best[height<=2160]/best")
-                    "1080" -> addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
-                    "720"  -> addOption("-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best")
-                    "480"  -> addOption("-f", "bestvideo[height<=480]+bestaudio/best[height<=480]/best")
-                    else   -> addOption("-f", "bestvideo+bestaudio/best")
+                    "2160" -> addOption("-f", "best[height<=?2160]/bestvideo[height<=?2160]+bestaudio/best")
+                    "1080" -> addOption("-f", "best[height<=?1080]/bestvideo[height<=?1080]+bestaudio/best")
+                    "720"  -> addOption("-f", "best[height<=?720]/bestvideo[height<=?720]+bestaudio/best")
+                    "480"  -> addOption("-f", "best[height<=?480]/bestvideo[height<=?480]/best")
+                    else   -> addOption("-f", "best/bestvideo+bestaudio")
                 }
             }
         }
@@ -459,14 +456,13 @@ class MainActivity : AppCompatActivity() {
                     })
                 }
                 
-                // Finished! Register in MediaStore so it immediately appears in Gallery & Photos
                 val mime = DownloadHelper.mimeType(fmt.isAudio, targetFile.name)
                 DownloadHelper.registerInGallery(this@MainActivity, targetFile, mime)
                 setDownloadSuccessState("✔ Saved directly to Phone Gallery!")
 
             } catch (e: Exception) {
                 android.util.Log.e("ARM", "Download error", e)
-                toast("Download failed: ${e.message}")
+                toast("Download interrupted. Please check network or try alternative quality.")
                 resetTransformingButton()
             }
         }
@@ -478,7 +474,6 @@ class MainActivity : AppCompatActivity() {
         tvTransformingText.text = msg
         isDownloading = false
 
-        // Reset back to normal button after 4.5 seconds
         scope.launch {
             delay(4500)
             if (!isDownloading && layoutTransformingBtn.visibility == View.VISIBLE) {
@@ -491,7 +486,7 @@ class MainActivity : AppCompatActivity() {
         isDownloading = false
         layoutTransformingBtn.setBackgroundResource(R.drawable.btn_download_normal)
         downloadProgressBar.progress = 0
-        tvTransformingText.text = "⚡ Start Native Download to Gallery"
+        tvTransformingText.text = "⚡ Start Fast Download to Gallery"
     }
 
     private fun showInfoDialog(title: String, message: String) {

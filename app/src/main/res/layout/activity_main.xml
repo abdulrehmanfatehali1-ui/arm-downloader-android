@@ -296,7 +296,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="10dp"
-                    android:text="Native yt-dlp is parsing streams..."
+                    android:text="⚡ Extracting media... Please wait"
                     android:textColor="#06b6d4"
                     android:textSize="13sp"
                     android:textStyle="bold"
@@ -404,7 +404,7 @@
                         android:maxLines="2"
                         android:ellipsize="end" />
 
-                    <!-- Quality Selector (LinearLayout ensures NO CLIPPING ever!) -->
+                    <!-- Quality Selector -->
                     <TextView
                         android:id="@+id/tvSelectQuality"
                         android:layout_width="wrap_content"
@@ -460,7 +460,7 @@
                                 android:id="@+id/tvTransformingText"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="⚡ Start Native Download to Gallery"
+                                android:text="⚡ Start Fast Download to Gallery"
                                 android:textColor="#ffffff"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />

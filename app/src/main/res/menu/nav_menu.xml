@@ -9,21 +9,18 @@
             android:id="@+id/nav_gallery"
             android:title="🖼️  My Gallery (Saved Media)" />
         <item
+            android:id="@+id/nav_history"
+            android:title="📜  Download History" />
+        <item
             android:id="@+id/nav_platforms"
             android:title="🎬  Supported Platforms &amp; Guides" />
     </group>
 
-    <item android:title="NATIVE PC ENGINE">
+    <item android:title="APP INFORMATION">
         <menu>
             <item
-                android:id="@+id/nav_ytdlp_status"
-                android:title="⚡ yt-dlp Core (v0.18.1 Active)" />
-            <item
-                android:id="@+id/nav_ffmpeg_status"
-                android:title="🛡️ FFmpeg 4-Arch Support" />
-            <item
                 android:id="@+id/nav_about"
-                android:title="ℹ️ About ARM Downloader" />
+                android:title="ℹ️  About ARM Downloader" />
         </menu>
     </item>
 </menu>

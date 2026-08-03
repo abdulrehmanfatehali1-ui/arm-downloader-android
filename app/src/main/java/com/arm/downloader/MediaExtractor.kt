@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit
 class MediaExtractor {
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
         .followRedirects(true)
         .build()
 
@@ -23,7 +23,7 @@ class MediaExtractor {
         url.contains("tiktok.com") -> "TikTok"
         url.contains("instagram.com") -> "Instagram"
         url.contains("facebook.com") || url.contains("fb.watch") -> "Facebook"
-        else -> "Universal (yt-dlp)"
+        else -> "Universal Downloader"
     }
 
     // ─── Main Extractor ───────────────────────────────────────────────────────
@@ -32,11 +32,10 @@ class MediaExtractor {
             try {
                 return@withContext extractTikTok(url)
             } catch (e: Exception) {
-                // If Tikwm ever fails, gracefully fall back to native yt-dlp below!
-                android.util.Log.w("ARM", "Tikwm fallback to yt-dlp: ${e.message}")
+                android.util.Log.w("ARM", "Tikwm fallback: ${e.message}")
             }
         }
-        return@withContext extractWithYtDlp(url, platform)
+        return@withContext extractFast(url, platform)
     }
 
     // ─── TikTok via Tikwm (Instant & No-Watermark) ─────────────────────────────
@@ -63,27 +62,33 @@ class MediaExtractor {
 
         val formats = mutableListOf<FormatItem>()
         if (hdUrl.isNotEmpty()) {
-            formats.add(FormatItem("hd", "HD No-Watermark", "1080p", "~ 20 MB", "1080", false, hdUrl))
+            formats.add(FormatItem("hd", "HD No-Watermark", "1080p", "Ultra Fast Stream", "1080", false, hdUrl))
         }
         if (sdUrl.isNotEmpty()) {
-            formats.add(FormatItem("sd", "SD No-Watermark", "720p", "~ 10 MB", "720", false, sdUrl))
+            formats.add(FormatItem("sd", "SD No-Watermark", "720p", "Fast Stream", "720", false, sdUrl))
         }
         if (musicUrl.isNotEmpty()) {
-            formats.add(FormatItem("mp3", "Music / Audio", "MP3", "~ 3 MB", "mp3", true, musicUrl))
+            formats.add(FormatItem("mp3", "Music / Audio", "MP3", "320kbps MP3 Audio", "mp3", true, musicUrl))
         }
 
         return MediaInfo(title, cover, uploaderName, avatarUrl, "TikTok", formats, url)
     }
 
-    // ─── Native yt-dlp Extraction (YouTube, Instagram, FB, Universal) ──────────
-    private fun extractWithYtDlp(url: String, platform: String): MediaInfo {
-        val request = YoutubeDLRequest(url)
+    // ─── High Speed Extraction (YouTube, Instagram, FB, Universal) ─────────────
+    private fun extractFast(url: String, platform: String): MediaInfo {
+        // Speed boost options for instantaneous info extraction!
+        val request = YoutubeDLRequest(url).apply {
+            addOption("--no-playlist")
+            addOption("--no-check-certificate")
+            addOption("--no-warnings")
+            addOption("--skip-download")
+            addOption("--socket-timeout", "10")
+        }
         val info = YoutubeDL.getInstance().getInfo(request)
 
         val title = info.title ?: "$platform Video"
         val uploader = info.uploader ?: "$platform Creator"
         
-        // Enhance HD Thumbnail for YouTube if applicable
         val videoIdRegex = Regex("[?&]v=([a-zA-Z0-9_-]{11})|youtu\\.be/([a-zA-Z0-9_-]{11})")
         val videoId = videoIdRegex.find(url)?.groupValues?.firstOrNull { it.length == 11 } ?: ""
         val hdThumb = if (videoId.isNotEmpty()) {
@@ -92,7 +97,6 @@ class MediaExtractor {
             info.thumbnail ?: ""
         }
 
-        // Reliably determine channel avatar from clean author name
         val handle = uploader.replace(" ", "").replace(Regex("[^a-zA-Z0-9_.-]"), "")
         val site = when (platform.lowercase()) {
             "youtube" -> "youtube"
@@ -104,24 +108,23 @@ class MediaExtractor {
 
         val formats = if (platform == "YouTube" || videoId.isNotEmpty()) {
             listOf(
-                FormatItem("2160", "4K Ultra HD Video", "4K", "Direct yt-dlp stream", "2160", false),
-                FormatItem("1080", "Full HD 1080p Video", "1080p", "Direct yt-dlp stream", "1080", false),
-                FormatItem("720", "HD Ready 720p Video", "720p", "Direct yt-dlp stream", "720", false),
-                FormatItem("480", "Standard 480p Video", "480p", "Direct yt-dlp stream", "480", false),
+                FormatItem("2160", "4K Ultra HD Video", "4K", "High Speed Direct Stream", "2160", false),
+                FormatItem("1080", "Full HD 1080p Video", "1080p", "High Speed Direct Stream", "1080", false),
+                FormatItem("720", "HD Ready 720p Video", "720p", "High Speed Direct Stream", "720", false),
+                FormatItem("480", "Standard 480p Video", "480p", "High Speed Direct Stream", "480", false),
                 FormatItem("mp3", "High Quality Audio", "MP3", "320kbps MP3 Audio", "mp3", true)
             )
         } else {
             listOf(
-                FormatItem("1080", "Best HD Quality", "HD", "Direct yt-dlp stream", "1080", false),
-                FormatItem("720", "Standard Quality", "SD", "Direct yt-dlp stream", "720", false),
-                FormatItem("mp3", "Audio Only", "MP3", "MP3 Audio Extract", "mp3", true)
+                FormatItem("1080", "Best HD Quality", "HD", "High Speed Direct Stream", "1080", false),
+                FormatItem("720", "Standard Quality", "SD", "High Speed Direct Stream", "720", false),
+                FormatItem("mp3", "Audio Only", "MP3", "320kbps MP3 Audio", "mp3", true)
             )
         }
 
         return MediaInfo(title, hdThumb, uploader, avatarUrl, platform, formats, url)
     }
 
-    // ─── Profile Picture ─────────────────────────────────────────────────────
     fun getProfileAvatarUrl(username: String, platform: String): String {
         val site = when (platform.lowercase()) {
             "tiktok" -> "tiktok"

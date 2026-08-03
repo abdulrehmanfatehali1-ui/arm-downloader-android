@@ -28,7 +28,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="⚡ Powered by Native yt-dlp &amp; FFmpeg"
+        android:text="⚡ High Speed Media Downloader"
         android:textColor="#06b6d4"
         android:textSize="12sp"
         android:textStyle="bold"
@@ -37,7 +37,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Version 2.0 • 100% Offline PC-Engine"
+        android:text="Version 2.0 • Ultra Fast &amp; HD Quality"
         android:textColor="#94a3b8"
         android:textSize="11sp"
         android:layout_marginTop="2dp" />
