@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:title="🏠  All-In-One Downloader"
+            android:checked="true" />
+        <item
+            android:id="@+id/nav_gallery"
+            android:title="🖼️  My Gallery (Saved Media)" />
+        <item
+            android:id="@+id/nav_platforms"
+            android:title="🎬  Supported Platforms &amp; Guides" />
+    </group>
+
+    <item android:title="NATIVE PC ENGINE">
+        <menu>
+            <item
+                android:id="@+id/nav_ytdlp_status"
+                android:title="⚡ yt-dlp Core (v0.18.1 Active)" />
+            <item
+                android:id="@+id/nav_ffmpeg_status"
+                android:title="🛡️ FFmpeg 4-Arch Support" />
+            <item
+                android:id="@+id/nav_about"
+                android:title="ℹ️ About ARM Downloader" />
+        </menu>
+    </item>
+</menu>

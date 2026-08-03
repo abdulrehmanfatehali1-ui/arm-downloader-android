@@ -1,355 +1,487 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_primary"
-    android:fillViewport="true">
+    android:background="#0f172a">
 
+    <!-- Main Content Area -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header -->
+        <!-- Top App Bar with Hamburger Menu & Status Tag -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:padding="16dp"
-            android:background="@color/bg_primary">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:background="#1e293b">
 
             <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:id="@+id/btnMenu"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_menu"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Open Menu" />
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:src="@drawable/ic_launcher_foreground"
+                android:layout_marginStart="14dp"
                 android:contentDescription="Logo" />
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginStart="10dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="ARM DOWNLOADER"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.05" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="YouTube • TikTok • Instagram • Facebook"
-                    android:textColor="@color/text_muted"
-                    android:textSize="11sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Platform Tabs -->
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayoutMain"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@color/bg_card"
-            app:tabMode="scrollable"
-            app:tabGravity="start"
-            app:tabIndicatorColor="@color/accent_purple"
-            app:tabIndicatorHeight="3dp"
-            app:tabSelectedTextColor="@color/accent_purple"
-            app:tabTextColor="@color/text_muted"
-            app:tabTextAppearance="@android:style/TextAppearance.Small">
-
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="All In One" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YouTube 4K" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TikTok" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Instagram" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Facebook" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Thumbnail" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Profile Pic" />
-        </com.google.android.material.tabs.TabLayout>
-
-        <!-- Profile Platform Sub-Tabs -->
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayoutProfile"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="@color/bg_primary"
-            android:visibility="gone"
-            app:tabIndicatorColor="@color/accent_cyan"
-            app:tabSelectedTextColor="@color/accent_cyan"
-            app:tabTextColor="@color/text_muted"
-            app:tabTextAppearance="@android:style/TextAppearance.Small">
-
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TikTok" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YouTube" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Instagram" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Facebook" />
-        </com.google.android.material.tabs.TabLayout>
-
-        <!-- URL Input Card -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@color/bg_card"
-            android:padding="16dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp">
-
-            <EditText
-                android:id="@+id/etUrl"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:hint="@string/hint_url"
-                android:textColorHint="@color/text_muted"
-                android:textColor="@color/text_primary"
-                android:background="@color/bg_input"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:inputType="textUri"
-                android:textSize="13sp"
-                android:singleLine="true" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp">
-
-                <Button
-                    android:id="@+id/btnPaste"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:text="Paste"
-                    android:textSize="13sp"
-                    android:backgroundTint="@color/bg_input"
-                    android:textColor="@color/text_secondary" />
-
-                <Space android:layout_width="10dp" android:layout_height="wrap_content" />
-
-                <Button
-                    android:id="@+id/btnFetch"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="2"
-                    android:text="Extract Info"
-                    android:textSize="13sp"
-                    android:backgroundTint="@color/accent_purple"
-                    android:textColor="@color/text_primary"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Loading -->
-        <ProgressBar
-            android:id="@+id/progressBarLoading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="24dp"
-            android:visibility="gone"
-            android:indeterminateTint="@color/accent_purple" />
-
-        <TextView
-            android:id="@+id/tvLoadingMsg"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp"
-            android:text="Extracting media with yt-dlp..."
-            android:textColor="@color/accent_purple"
-            android:textSize="13sp"
-            android:visibility="gone" />
-
-        <!-- Preview Section -->
-        <LinearLayout
-            android:id="@+id/layoutPreview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:layout_marginTop="12dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="32dp">
-
-            <!-- Thumbnail -->
-            <ImageView
-                android:id="@+id/imgThumb"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
-                android:background="@color/bg_card"
-                android:contentDescription="Thumbnail" />
-
-            <!-- Save Thumbnail button -->
-            <Button
-                android:id="@+id/btnSaveThumbnail"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:text="Save HD Thumbnail"
-                android:textSize="12sp"
-                android:backgroundTint="@color/bg_card"
-                android:textColor="@color/accent_cyan"
-                android:layout_marginTop="4dp" />
-
-            <!-- Creator Info -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@color/bg_card"
-                android:padding="12dp"
-                android:layout_marginTop="8dp">
-
-                <ImageView
-                    android:id="@+id/imgAvatar"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:scaleType="centerCrop"
-                    android:background="@color/bg_input"
-                    android:contentDescription="Creator Avatar" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="12dp">
-
-                    <TextView
-                        android:id="@+id/tvUploader"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Creator"
-                        android:textColor="@color/text_primary"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvPlatform"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Platform"
-                        android:textColor="@color/accent_cyan"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnSaveAvatar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:text="Save PFP"
-                    android:textSize="11sp"
-                    android:backgroundTint="@color/bg_input"
-                    android:textColor="@color/accent_purple" />
-            </LinearLayout>
-
-            <!-- Title -->
             <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Video Title"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:padding="12dp"
-                android:background="@color/bg_card"
-                android:layout_marginTop="8dp"
-                android:maxLines="2"
-                android:ellipsize="end" />
-
-            <!-- Format Cards Container (Replaces RecyclerView to stop clipping bugs) -->
-            <TextView
-                android:id="@+id/tvSelectQuality"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Select Quality (Direct yt-dlp)"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp"
+                android:text="ARM DOWNLOADER"
+                android:textColor="#ffffff"
+                android:textSize="17sp"
                 android:textStyle="bold"
-                android:layout_marginTop="16dp"
-                android:layout_marginStart="2dp"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
+                android:letterSpacing="0.04"
+                android:layout_marginStart="8dp" />
+
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+            <!-- Gallery Quick Open Chip -->
+            <TextView
+                android:id="@+id/btnHeaderGallery"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:background="@drawable/social_chip_bg"
+                android:gravity="center"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="🖼️ Gallery"
+                android:textColor="#06b6d4"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <LinearLayout
-                android:id="@+id/layoutFormats"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="gone" />
+                android:paddingBottom="40dp">
 
-            <!-- Download Button -->
-            <Button
-                android:id="@+id/btnDownload"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Start Download"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:backgroundTint="@color/accent_purple"
-                android:textColor="@color/text_primary"
-                android:layout_marginTop="12dp"
-                android:visibility="gone" />
+                <!-- Glowing Social Media Dashboard Cards (Horizontal Scroll) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SELECT PLATFORM / MODE"
+                    android:textColor="#64748b"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginStart="16dp" />
 
-            <!-- Download Progress -->
-            <LinearLayout
-                android:id="@+id/layoutProgress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@color/bg_card"
-                android:padding="16dp"
-                android:layout_marginTop="12dp"
-                android:visibility="gone">
-
-                <ProgressBar
-                    android:id="@+id/downloadProgressBar"
-                    style="?android:attr/progressBarStyleHorizontal"
+                <HorizontalScrollView
                     android:layout_width="match_parent"
-                    android:layout_height="8dp"
-                    android:progressTint="@color/accent_purple"
-                    android:progressBackgroundTint="@color/bg_input"
-                    android:max="100" />
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="4dp"
+                    android:clipToPadding="false"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp">
 
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Mode Chips -->
+                        <TextView
+                            android:id="@+id/chipAll"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="🚀 Universal All-in-One"
+                            android:background="@drawable/social_chip_selected_bg"
+                            android:textColor="#ffffff"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/chipYt"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="📺 YouTube 4K"
+                            android:background="@drawable/social_chip_bg"
+                            android:textColor="#94a3b8"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/chipTiktok"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="🎵 TikTok No-Watermark"
+                            android:background="@drawable/social_chip_bg"
+                            android:textColor="#94a3b8"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/chipInsta"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="📸 Insta Reels &amp; Posts"
+                            android:background="@drawable/social_chip_bg"
+                            android:textColor="#94a3b8"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/chipFb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="📘 Facebook Video"
+                            android:background="@drawable/social_chip_bg"
+                            android:textColor="#94a3b8"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/chipThumb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="🖼️ Thumbnail Grab"
+                            android:background="@drawable/social_chip_bg"
+                            android:textColor="#94a3b8"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/chipPfp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:gravity="center"
+                            android:text="👤 Profile Picture Grab"
+                            android:background="@drawable/social_chip_bg"
+                            android:textColor="#94a3b8"
+                            android:textStyle="bold"
+                            android:textSize="13sp"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp" />
+
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- Profile Sub-Mode Chips (Hidden unless PFP tab selected) -->
                 <LinearLayout
+                    android:id="@+id/layoutProfilePlatforms"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone">
+                    
+                    <Button android:id="@+id/btnPfpTiktok" android:layout_width="wrap_content" android:layout_height="36dp" android:text="TikTok" android:textSize="11sp" android:backgroundTint="#8b5cf6" android:textColor="#fff" android:layout_marginEnd="6dp" />
+                    <Button android:id="@+id/btnPfpYt" android:layout_width="wrap_content" android:layout_height="36dp" android:text="YouTube" android:textSize="11sp" android:backgroundTint="#334155" android:textColor="#94a3b8" android:layout_marginEnd="6dp" />
+                    <Button android:id="@+id/btnPfpInsta" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Instagram" android:textSize="11sp" android:backgroundTint="#334155" android:textColor="#94a3b8" android:layout_marginEnd="6dp" />
+                    <Button android:id="@+id/btnPfpFb" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Facebook" android:textSize="11sp" android:backgroundTint="#334155" android:textColor="#94a3b8" />
+                </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvProgress"
-                        android:layout_width="0dp"
+                <!-- URL Input Glass Card -->
+                <LinearLayout
+                    android:id="@+id/cardUrlInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/btn_progress_bg"
+                    android:padding="16dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp">
+
+                    <EditText
+                        android:id="@+id/etUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:hint="Paste YouTube, TikTok, Insta, or FB video link..."
+                        android:textColorHint="#64748b"
+                        android:textColor="#ffffff"
+                        android:background="#0f172a"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:inputType="textUri"
+                        android:textSize="14sp"
+                        android:singleLine="true" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="0%"
-                        android:textColor="@color/accent_purple"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp">
 
+                        <Button
+                            android:id="@+id/btnPaste"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:text="Paste Link"
+                            android:textSize="13sp"
+                            android:backgroundTint="#334155"
+                            android:textColor="#ffffff"
+                            app:cornerRadius="12dp" />
+
+                        <Space android:layout_width="10dp" android:layout_height="wrap_content" />
+
+                        <Button
+                            android:id="@+id/btnFetch"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1.8"
+                            android:text="⚡ Extract Media"
+                            android:textSize="14sp"
+                            android:backgroundTint="#8b5cf6"
+                            android:textColor="#ffffff"
+                            android:textStyle="bold"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Loading Spinner -->
+                <ProgressBar
+                    android:id="@+id/progressBarLoading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="28dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="#8b5cf6" />
+
+                <TextView
+                    android:id="@+id/tvLoadingMsg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="10dp"
+                    android:text="Native yt-dlp is parsing streams..."
+                    android:textColor="#06b6d4"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <!-- Media Preview & Download Section -->
+                <LinearLayout
+                    android:id="@+id/layoutPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp">
+
+                    <!-- HD Thumbnail -->
+                    <ImageView
+                        android:id="@+id/imgThumb"
+                        android:layout_width="match_parent"
+                        android:layout_height="210dp"
+                        android:scaleType="centerCrop"
+                        android:background="#1e293b"
+                        android:contentDescription="Video Thumbnail" />
+
+                    <!-- Save Thumbnail Only -->
+                    <Button
+                        android:id="@+id/btnSaveThumbnail"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:text="💾 Save HD Thumbnail to Gallery"
+                        android:textSize="13sp"
+                        android:backgroundTint="#1e293b"
+                        android:textColor="#06b6d4"
+                        android:layout_marginTop="6dp"
+                        app:cornerRadius="10dp" />
+
+                    <!-- Creator Info Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="#1e293b"
+                        android:padding="12dp"
+                        android:layout_marginTop="8dp">
+
+                        <ImageView
+                            android:id="@+id/imgAvatar"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:scaleType="centerCrop"
+                            android:background="#0f172a"
+                            android:contentDescription="Creator Avatar" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="12dp">
+
+                            <TextView
+                                android:id="@+id/tvUploader"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Creator Handle"
+                                android:textColor="#ffffff"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvPlatform"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Platform"
+                                android:textColor="#06b6d4"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btnSaveAvatar"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:text="Save PFP"
+                            android:textSize="12sp"
+                            android:backgroundTint="#334155"
+                            android:textColor="#8b5cf6"
+                            app:cornerRadius="10dp" />
+                    </LinearLayout>
+
+                    <!-- Title -->
                     <TextView
-                        android:id="@+id/tvDownloadStatus"
+                        android:id="@+id/tvTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Video Title Here"
+                        android:textColor="#ffffff"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:padding="14dp"
+                        android:background="#1e293b"
+                        android:layout_marginTop="6dp"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                    <!-- Quality Selector (LinearLayout ensures NO CLIPPING ever!) -->
+                    <TextView
+                        android:id="@+id/tvSelectQuality"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Downloading..."
-                        android:textColor="@color/text_muted"
-                        android:textSize="11sp" />
+                        android:text="SELECT DOWNLOAD QUALITY"
+                        android:textColor="#94a3b8"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutFormats"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone" />
+
+                    <!-- TRANSFORMING LIVE DOWNLOAD PROGRESS BUTTON -->
+                    <RelativeLayout
+                        android:id="@+id/layoutTransformingBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/btn_download_normal"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:layout_marginTop="16dp"
+                        android:visibility="gone">
+
+                        <ProgressBar
+                            android:id="@+id/downloadProgressBar"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:progressDrawable="@android:drawable/progress_horizontal"
+                            android:progressTint="#06b6d4"
+                            android:progressBackgroundTint="#00000000"
+                            android:max="100"
+                            android:progress="0"
+                            android:scaleY="14"
+                            android:alpha="0.4" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_centerInParent="true"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:id="@+id/tvTransformingText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚡ Start Native Download to Gallery"
+                                android:textColor="#ffffff"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </RelativeLayout>
+
                 </LinearLayout>
             </LinearLayout>
-
-        </LinearLayout>
-
+        </ScrollView>
     </LinearLayout>
-</ScrollView>
+
+    <!-- Sidebar Navigation Drawer -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#1e293b"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/nav_menu"
+        app:itemTextColor="#ffffff"
+        app:itemIconTint="#06b6d4" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

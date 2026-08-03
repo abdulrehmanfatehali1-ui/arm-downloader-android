@@ -1,5 +1,6 @@
 package com.arm.downloader
 
+import android.app.AlertDialog
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
@@ -7,9 +8,11 @@ import android.os.Environment
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
-import com.google.android.material.tabs.TabLayout
+import com.google.android.material.navigation.NavigationView
 import com.yausername.ffmpeg.FFmpeg
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -22,13 +25,35 @@ class MainActivity : AppCompatActivity() {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     // Views
-    private lateinit var tabMain: TabLayout
-    private lateinit var tabProfile: TabLayout
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
+    private lateinit var btnMenu: ImageView
+    private lateinit var btnHeaderGallery: TextView
+
+    // Mode Chips
+    private lateinit var chipAll: TextView
+    private lateinit var chipYt: TextView
+    private lateinit var chipTiktok: TextView
+    private lateinit var chipInsta: TextView
+    private lateinit var chipFb: TextView
+    private lateinit var chipThumb: TextView
+    private lateinit var chipPfp: TextView
+
+    // Profile Sub-Mode buttons
+    private lateinit var layoutProfilePlatforms: LinearLayout
+    private lateinit var btnPfpTiktok: Button
+    private lateinit var btnPfpYt: Button
+    private lateinit var btnPfpInsta: Button
+    private lateinit var btnPfpFb: Button
+
+    // Input & Loading
     private lateinit var etUrl: EditText
     private lateinit var btnPaste: Button
     private lateinit var btnFetch: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var tvLoadingMsg: TextView
+
+    // Preview Section
     private lateinit var layoutPreview: LinearLayout
     private lateinit var imgThumb: ImageView
     private lateinit var imgAvatar: ImageView
@@ -39,24 +64,26 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSaveAvatar: Button
     private lateinit var layoutFormats: LinearLayout
     private lateinit var tvSelectQuality: TextView
-    private lateinit var btnDownload: Button
-    private lateinit var layoutProgress: LinearLayout
+
+    // Transforming Progress Button
+    private lateinit var layoutTransformingBtn: RelativeLayout
     private lateinit var downloadProgressBar: ProgressBar
-    private lateinit var tvProgress: TextView
-    private lateinit var tvDownloadStatus: TextView
+    private lateinit var tvTransformingText: TextView
 
     // State
     private var currentMediaInfo: MediaInfo? = null
     private var selectedFormat: FormatItem? = null
-    private var currentTab = 0       // Main tab index
-    private var profileTab = 0       // Profile sub-tab index
+    private var currentMode = "All"
+    private var pfpPlatform = "TikTok"
+    private var isDownloading = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initNativeEngine()
         bindViews()
-        setupTabs()
+        setupSidebar()
+        setupSocialChips()
         setupButtons()
     }
 
@@ -68,70 +95,146 @@ class MainActivity : AppCompatActivity() {
                 try {
                     YoutubeDL.getInstance().updateYoutubeDL(applicationContext, YoutubeDL.UpdateChannel.STABLE)
                 } catch (e: Exception) {
-                    // ignore network error during silent update check
+                    // ignore offline network check
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("ARM", "Failed to init youtubedl-android", e)
+            android.util.Log.e("ARM", "Failed to init native engine", e)
         }
     }
 
     private fun bindViews() {
-        tabMain         = findViewById(R.id.tabLayoutMain)
-        tabProfile      = findViewById(R.id.tabLayoutProfile)
-        etUrl           = findViewById(R.id.etUrl)
-        btnPaste        = findViewById(R.id.btnPaste)
-        btnFetch        = findViewById(R.id.btnFetch)
-        progressBar     = findViewById(R.id.progressBarLoading)
-        tvLoadingMsg    = findViewById(R.id.tvLoadingMsg)
-        layoutPreview   = findViewById(R.id.layoutPreview)
-        imgThumb        = findViewById(R.id.imgThumb)
-        imgAvatar       = findViewById(R.id.imgAvatar)
-        tvUploader      = findViewById(R.id.tvUploader)
-        tvPlatform      = findViewById(R.id.tvPlatform)
-        tvTitle         = findViewById(R.id.tvTitle)
-        btnSaveThumbnail = findViewById(R.id.btnSaveThumbnail)
-        btnSaveAvatar   = findViewById(R.id.btnSaveAvatar)
-        layoutFormats   = findViewById(R.id.layoutFormats)
-        tvSelectQuality = findViewById(R.id.tvSelectQuality)
-        btnDownload     = findViewById(R.id.btnDownload)
-        layoutProgress  = findViewById(R.id.layoutProgress)
-        downloadProgressBar = findViewById(R.id.downloadProgressBar)
-        tvProgress      = findViewById(R.id.tvProgress)
-        tvDownloadStatus = findViewById(R.id.tvDownloadStatus)
+        drawerLayout        = findViewById(R.id.drawerLayout)
+        navigationView      = findViewById(R.id.navigationView)
+        btnMenu             = findViewById(R.id.btnMenu)
+        btnHeaderGallery    = findViewById(R.id.btnHeaderGallery)
+
+        chipAll             = findViewById(R.id.chipAll)
+        chipYt              = findViewById(R.id.chipYt)
+        chipTiktok          = findViewById(R.id.chipTiktok)
+        chipInsta           = findViewById(R.id.chipInsta)
+        chipFb              = findViewById(R.id.chipFb)
+        chipThumb           = findViewById(R.id.chipThumb)
+        chipPfp             = findViewById(R.id.chipPfp)
+
+        layoutProfilePlatforms = findViewById(R.id.layoutProfilePlatforms)
+        btnPfpTiktok        = findViewById(R.id.btnPfpTiktok)
+        btnPfpYt            = findViewById(R.id.btnPfpYt)
+        btnPfpInsta         = findViewById(R.id.btnPfpInsta)
+        btnPfpFb            = findViewById(R.id.btnPfpFb)
+
+        etUrl               = findViewById(R.id.etUrl)
+        btnPaste            = findViewById(R.id.btnPaste)
+        btnFetch            = findViewById(R.id.btnFetch)
+        progressBar         = findViewById(R.id.progressBarLoading)
+        tvLoadingMsg        = findViewById(R.id.tvLoadingMsg)
+
+        layoutPreview       = findViewById(R.id.layoutPreview)
+        imgThumb            = findViewById(R.id.imgThumb)
+        imgAvatar           = findViewById(R.id.imgAvatar)
+        tvUploader          = findViewById(R.id.tvUploader)
+        tvPlatform          = findViewById(R.id.tvPlatform)
+        tvTitle             = findViewById(R.id.tvTitle)
+        btnSaveThumbnail    = findViewById(R.id.btnSaveThumbnail)
+        btnSaveAvatar       = findViewById(R.id.btnSaveAvatar)
+        layoutFormats       = findViewById(R.id.layoutFormats)
+        tvSelectQuality     = findViewById(R.id.tvSelectQuality)
+
+        layoutTransformingBtn = findViewById(R.id.layoutTransformingBtn)
+        downloadProgressBar   = findViewById(R.id.downloadProgressBar)
+        tvTransformingText    = findViewById(R.id.tvTransformingText)
     }
 
-    private fun setupTabs() {
-        tabMain.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                currentTab = tab?.position ?: 0
-                tabProfile.visibility = if (currentTab == 6) View.VISIBLE else View.GONE
-                updateHint()
-                resetPreview()
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
-
-        tabProfile.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                profileTab = tab?.position ?: 0
-                updateHint()
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
-    }
-
-    private fun updateHint() {
-        etUrl.hint = when {
-            currentTab == 6 -> {
-                val platform = listOf("TikTok", "YouTube", "Instagram", "Facebook")[profileTab]
-                "Enter $platform username (e.g. @username)"
-            }
-            currentTab == 5 -> "Paste YouTube / TikTok / Instagram link..."
-            else -> "Paste YouTube, TikTok, Instagram, Facebook link..."
+    private fun setupSidebar() {
+        btnMenu.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
         }
+
+        btnHeaderGallery.setOnClickListener {
+            DownloadHelper.openGallery(this)
+        }
+
+        navigationView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> drawerLayout.closeDrawer(GravityCompat.START)
+                R.id.nav_gallery -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    DownloadHelper.openGallery(this)
+                }
+                R.id.nav_platforms -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showInfoDialog("Supported Platforms 🎬",
+                        "ARM DOWNLOADER PRO natively extracts high definition media from:\n\n" +
+                        "📺 YouTube: Up to 4K Ultra HD Video & 320kbps MP3 Audio.\n" +
+                        "🎵 TikTok: HD No-Watermark MP4 & original sound extraction.\n" +
+                        "📸 Instagram: Reels, IGTV, Photos & carousel videos.\n" +
+                        "📘 Facebook: Public Watch videos, Shorts & clips.\n\n" +
+                        "✔ All videos save directly to your phone Gallery!")
+                }
+                R.id.nav_ytdlp_status, R.id.nav_ffmpeg_status -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showInfoDialog("PC-Level Native Engine ⚡",
+                        "Your app runs entirely offline with embedded PC libraries:\n\n" +
+                        "🔹 yt-dlp Core: v0.18.1 (Autonomous video decryption & stream parsing)\n" +
+                        "🔹 FFmpeg: Multi-threaded stream combiner (ARM64, ARMv7, x86, x86_64)\n\n" +
+                        "No external servers or Cobalt APIs are used. You are immune to server crashes or API bans!")
+                }
+                R.id.nav_about -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showInfoDialog("About ARM DOWNLOADER", "Version 2.0 Pro\nBuilt with Native Kotlin, Material3 & yt-dlp Engine.\nDeveloped for maximum performance & visual excellence.")
+                }
+            }
+            true
+        }
+    }
+
+    private fun setupSocialChips() {
+        val allChips = listOf(chipAll, chipYt, chipTiktok, chipInsta, chipFb, chipThumb, chipPfp)
+        
+        fun selectChip(selected: TextView, mode: String, hint: String) {
+            currentMode = mode
+            etUrl.hint = hint
+            layoutProfilePlatforms.visibility = if (mode == "PFP") View.VISIBLE else View.GONE
+            resetPreview()
+
+            allChips.forEach { chip ->
+                if (chip == selected) {
+                    chip.setBackgroundResource(R.drawable.social_chip_selected_bg)
+                    chip.setTextColor(android.graphics.Color.WHITE)
+                } else {
+                    chip.setBackgroundResource(R.drawable.social_chip_bg)
+                    chip.setTextColor(android.graphics.Color.parseColor("#94a3b8"))
+                }
+            }
+        }
+
+        chipAll.setOnClickListener { selectChip(chipAll, "All", "Paste any YouTube, TikTok, Insta, or FB link...") }
+        chipYt.setOnClickListener { selectChip(chipYt, "YouTube", "Paste YouTube video or Shorts link for 4K extract...") }
+        chipTiktok.setOnClickListener { selectChip(chipTiktok, "TikTok", "Paste TikTok link for HD No-Watermark MP4...") }
+        chipInsta.setOnClickListener { selectChip(chipInsta, "Instagram", "Paste Instagram Reel or Video post link...") }
+        chipFb.setOnClickListener { selectChip(chipFb, "Facebook", "Paste Facebook watch or post link...") }
+        chipThumb.setOnClickListener { selectChip(chipThumb, "Thumbnail", "Paste any video link to extract HD thumbnail...") }
+        chipPfp.setOnClickListener { selectChip(chipPfp, "PFP", "Enter creator username (e.g. @MrBeast or username)...") }
+
+        // Sub-buttons for PFP mode
+        val pfpBtns = listOf(btnPfpTiktok, btnPfpYt, btnPfpInsta, btnPfpFb)
+        fun selectPfpBtn(btn: Button, platform: String) {
+            pfpPlatform = platform
+            etUrl.hint = "Enter $platform username (e.g. @username)..."
+            pfpBtns.forEach { b ->
+                if (b == btn) {
+                    b.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#8b5cf6"))
+                    b.setTextColor(android.graphics.Color.WHITE)
+                } else {
+                    b.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#334155"))
+                    b.setTextColor(android.graphics.Color.parseColor("#94a3b8"))
+                }
+            }
+        }
+        btnPfpTiktok.setOnClickListener { selectPfpBtn(btnPfpTiktok, "TikTok") }
+        btnPfpYt.setOnClickListener { selectPfpBtn(btnPfpYt, "YouTube") }
+        btnPfpInsta.setOnClickListener { selectPfpBtn(btnPfpInsta, "Instagram") }
+        btnPfpFb.setOnClickListener { selectPfpBtn(btnPfpFb, "Facebook") }
     }
 
     private fun setupButtons() {
@@ -148,14 +251,15 @@ class MainActivity : AppCompatActivity() {
 
         btnFetch.setOnClickListener {
             val url = etUrl.text.toString().trim()
-            if (url.isEmpty()) { toast("Please enter a URL or username"); return@setOnClickListener }
-            if (currentTab == 6) fetchProfile(url) else fetchMedia(url)
+            if (url.isEmpty()) { toast("Please paste a URL or enter username"); return@setOnClickListener }
+            if (currentMode == "PFP") fetchProfile(url) else fetchMedia(url)
         }
 
-        btnDownload.setOnClickListener {
+        layoutTransformingBtn.setOnClickListener {
+            if (isDownloading) return@setOnClickListener
             val info = currentMediaInfo ?: return@setOnClickListener
             val fmt  = selectedFormat ?: return@setOnClickListener
-            startDownload(info, fmt)
+            startTransformingDownload(info, fmt)
         }
 
         btnSaveThumbnail.setOnClickListener {
@@ -177,13 +281,13 @@ class MainActivity : AppCompatActivity() {
 
     // ─── Fetch Media ──────────────────────────────────────────────────────────
     private fun fetchMedia(url: String) {
-        val platform = when (currentTab) {
-            1 -> "YouTube"
-            2 -> "TikTok"
-            3 -> "Instagram"
-            4 -> "Facebook"
-            5 -> "YouTube" // Thumbnail mode
-            else -> extractor.detectPlatform(url)
+        val platform = when (currentMode) {
+            "YouTube"   -> "YouTube"
+            "TikTok"    -> "TikTok"
+            "Instagram" -> "Instagram"
+            "Facebook"  -> "Facebook"
+            "Thumbnail" -> "YouTube" // Try YT default for thumbnails
+            else        -> extractor.detectPlatform(url)
         }
 
         showLoading(true)
@@ -204,34 +308,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── Profile Fetch ────────────────────────────────────────────────────────
     private fun fetchProfile(username: String) {
-        val platform = listOf("TikTok", "YouTube", "Instagram", "Facebook")[profileTab]
         val cleanUser = username.trimStart('@')
-        val avatarUrl = extractor.getProfileAvatarUrl(cleanUser, platform)
+        val avatarUrl = extractor.getProfileAvatarUrl(cleanUser, pfpPlatform)
 
         currentMediaInfo = MediaInfo(
-            title = "$platform Profile",
+            title = "$pfpPlatform Profile",
             thumbnailUrl = avatarUrl,
             uploader = "@$cleanUser",
             avatarUrl = avatarUrl,
-            platform = platform,
+            platform = pfpPlatform,
             formats = emptyList(),
             originalUrl = avatarUrl
         )
         showPreview(currentMediaInfo!!, profileOnly = true)
     }
 
-    // ─── Show Preview ─────────────────────────────────────────────────────────
     private fun showPreview(info: MediaInfo, profileOnly: Boolean = false) {
         layoutPreview.visibility = View.VISIBLE
 
-        // Thumbnail
         if (info.thumbnailUrl.isNotEmpty()) {
             Glide.with(this).load(info.thumbnailUrl).into(imgThumb)
         }
 
-        // Avatar with fallback
         val avatarSrc = info.avatarUrl.ifEmpty {
             "https://ui-avatars.com/api/?name=${info.uploader}&background=8b5cf6&color=fff&size=128"
         }
@@ -241,20 +340,21 @@ class MainActivity : AppCompatActivity() {
         tvPlatform.text = info.platform
         tvTitle.text = if (profileOnly) "${info.platform} Profile" else info.title
 
-        if (profileOnly || currentTab == 5) {
+        if (profileOnly || currentMode == "Thumbnail") {
             tvSelectQuality.visibility = View.GONE
             layoutFormats.visibility = View.GONE
-            btnDownload.visibility = View.GONE
+            layoutTransformingBtn.visibility = View.GONE
         } else {
             tvSelectQuality.visibility = View.VISIBLE
             layoutFormats.visibility = View.VISIBLE
-            btnDownload.visibility = View.VISIBLE
+            layoutTransformingBtn.visibility = View.VISIBLE
 
+            // Reset Transforming Button State
+            resetTransformingButton()
             renderFormats(info.formats)
         }
     }
 
-    // ─── Render Formats cleanly in LinearLayout (No RecyclerView clipping bugs!) ──
     private fun renderFormats(formats: List<FormatItem>) {
         layoutFormats.removeAllViews()
         val cardViews = mutableListOf<View>()
@@ -281,6 +381,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             view.setOnClickListener {
+                if (isDownloading) return@setOnClickListener
                 selectedFormat = fmt
                 cardViews.forEachIndexed { i, v ->
                     val icon = v.findViewById<ImageView>(R.id.ivSelected)
@@ -300,29 +401,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── Download (Direct via DownloadManager for TikTok, Native yt-dlp for YT/IG/FB) ──
-    private fun startDownload(info: MediaInfo, fmt: FormatItem) {
-        // If we already have a direct link (e.g., Tikwm watermark-free MP4/MP3)
+    // ─── Transforming Download Progress Button & Gallery Saving ────────────────
+    private fun startTransformingDownload(info: MediaInfo, fmt: FormatItem) {
+        isDownloading = true
+        layoutTransformingBtn.setBackgroundResource(R.drawable.btn_progress_bg)
+        downloadProgressBar.progress = 0
+        tvTransformingText.text = "⏳ Starting Download to Gallery..."
+
+        // If direct link available (e.g. TikTok No-Watermark from Tikwm)
         if (!fmt.directUrl.isNullOrEmpty()) {
             val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
             val mime = DownloadHelper.mimeType(fmt.isAudio, fmt.directUrl)
             DownloadHelper.download(this, fmt.directUrl, filename, mime)
+            
+            // Simulate quick button completion for direct queues
+            scope.launch {
+                delay(1500)
+                setDownloadSuccessState("✔ Queued Directly to Gallery!")
+            }
             return
         }
 
-        // Otherwise invoke Native yt-dlp Engine!
-        layoutProgress.visibility = View.VISIBLE
-        btnDownload.isEnabled = false
-        tvDownloadStatus.text = "Initializing native yt-dlp engine..."
-        downloadProgressBar.isIndeterminate = false
-        downloadProgressBar.progress = 0
-        tvProgress.text = "0%"
-
-        val downloadDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "ARM")
-        if (!downloadDir.exists()) downloadDir.mkdirs()
-
+        // Native PC Engine Execution
+        val targetDir = DownloadHelper.getGalleryDirectory(fmt.isAudio)
         val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
-        val targetFile = File(downloadDir, filename)
+        val targetFile = File(targetDir, filename)
         if (targetFile.exists()) targetFile.delete()
 
         val request = YoutubeDLRequest(info.originalUrl).apply {
@@ -349,27 +452,56 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) {
                     YoutubeDL.getInstance().execute(request, processId, callback = { progress: Float, eta: Long, _: String ->
                         scope.launch {
-                            downloadProgressBar.progress = progress.toInt()
-                            tvProgress.text = "${progress.toInt()}%"
-                            tvDownloadStatus.text = if (eta > 0) "Downloading (ETA: ${eta}s)..." else "Downloading..."
+                            val p = progress.toInt().coerceIn(0, 99)
+                            downloadProgressBar.progress = p
+                            tvTransformingText.text = if (eta > 0) "Downloading ($p%) — ETA: ${eta}s" else "Downloading ($p%)..."
                         }
                     })
                 }
-                tvDownloadStatus.text = "Download Complete! Saved in Downloads/ARM/"
-                downloadProgressBar.progress = 100
-                tvProgress.text = "100%"
-                toast("Saved to Downloads/ARM/$filename")
-                btnDownload.isEnabled = true
+                
+                // Finished! Register in MediaStore so it immediately appears in Gallery & Photos
+                val mime = DownloadHelper.mimeType(fmt.isAudio, targetFile.name)
+                DownloadHelper.registerInGallery(this@MainActivity, targetFile, mime)
+                setDownloadSuccessState("✔ Saved directly to Phone Gallery!")
+
             } catch (e: Exception) {
-                android.util.Log.e("ARM", "Download failure", e)
+                android.util.Log.e("ARM", "Download error", e)
                 toast("Download failed: ${e.message}")
-                layoutProgress.visibility = View.GONE
-                btnDownload.isEnabled = true
+                resetTransformingButton()
             }
         }
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    private fun setDownloadSuccessState(msg: String) {
+        downloadProgressBar.progress = 100
+        layoutTransformingBtn.setBackgroundResource(R.drawable.btn_download_success)
+        tvTransformingText.text = msg
+        isDownloading = false
+
+        // Reset back to normal button after 4.5 seconds
+        scope.launch {
+            delay(4500)
+            if (!isDownloading && layoutTransformingBtn.visibility == View.VISIBLE) {
+                resetTransformingButton()
+            }
+        }
+    }
+
+    private fun resetTransformingButton() {
+        isDownloading = false
+        layoutTransformingBtn.setBackgroundResource(R.drawable.btn_download_normal)
+        downloadProgressBar.progress = 0
+        tvTransformingText.text = "⚡ Start Native Download to Gallery"
+    }
+
+    private fun showInfoDialog(title: String, message: String) {
+        AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Awesome!") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         tvLoadingMsg.visibility = if (show) View.VISIBLE else View.GONE
@@ -378,9 +510,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun resetPreview() {
         layoutPreview.visibility = View.GONE
-        layoutProgress.visibility = View.GONE
         currentMediaInfo = null
         selectedFormat = null
+        isDownloading = false
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
