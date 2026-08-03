@@ -3,10 +3,30 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+  <!-- Purple background circle -->
   <path
-      android:fillColor="#8b5cf6"
-      android:pathData="M54,54m-27,0a27,27 0,1 1,54 0a27,27 0,1 1,-54 0"/>
+      android:fillColor="#4f46e5"
+      android:pathData="M0,0 H108 V108 H0 Z"/>
+
+  <!-- Cloud body -->
   <path
       android:fillColor="#ffffff"
-      android:pathData="M54,40c-3.87,0 -7,3.13 -7,7s3.13,7 7,7 7,-3.13 7,-7 -3.13,-7 -7,-7zM54,61c-4.67,0 -14,2.34 -14,7v3h28v-3c0,-4.66 -9.33,-7 -14,-7z"/>
+      android:pathData="M71,46c0,-0.3 0,-0.7 0,-1c0,-9.4 -7.6,-17 -17,-17c-7.2,0 -13.4,4.5 -16,10.9C36.1,38.3 34.1,38 32,38c-6.6,0 -12,5.4 -12,12c0,6.6 5.4,12 12,12h38c5.5,0 10,-4.5 10,-10C80,47.2 75.5,43.9 71,46z"/>
+
+  <!-- Download arrow shaft -->
+  <path
+      android:fillColor="#4f46e5"
+      android:pathData="M51,47 L51,62 L57,62 L57,47 Z"/>
+
+  <!-- Download arrow head -->
+  <path
+      android:fillColor="#4f46e5"
+      android:pathData="M44,58 L54,72 L64,58 Z"/>
+
+  <!-- Download base line -->
+  <path
+      android:fillColor="#ffffff"
+      android:pathData="M42,76 H66 V80 H42 Z"/>
+
 </vector>

@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">ARM DOWNLOADER</string>
+    <string name="paste">Paste</string>
+    <string name="fetch">Extract Info</string>
+    <string name="download">Start Download</string>
+    <string name="save_thumbnail">Save HD Thumbnail</string>
+    <string name="save_profile">Save Profile Pic</string>
+    <string name="hint_url">Paste YouTube, TikTok, Instagram link here...</string>
 </resources>
