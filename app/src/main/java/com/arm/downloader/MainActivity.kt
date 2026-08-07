@@ -396,6 +396,100 @@ class MainActivity : AppCompatActivity() {
 
     // ─── Ultra Fast Download & Gallery Saving ──────────────────────────────────
     private fun startTransformingDownload(info: MediaInfo, fmt: FormatItem) {
+    // Check network connectivity before starting download
+    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    val activeNetwork = connectivityManager.activeNetworkInfo
+    if (activeNetwork?.isConnectedOrConnecting != true) {
+        toast("No internet connection. Please check your network and try again.")
+        return
+    }
+
+    isDownloading = true
+    layoutTransformingBtn.setBackgroundResource(R.drawable.btn_progress_bg)
+    downloadProgressBar.progress = 0
+    tvTransformingText.text = "⏳ Starting High Speed Download..."
+
+    if (!fmt.directUrl.isNullOrEmpty()) {
+        val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
+        val mime = DownloadHelper.mimeType(fmt.isAudio, fmt.directUrl)
+        DownloadHelper.download(this, fmt.directUrl, filename, mime)
+
+        scope.launch {
+            delay(1500)
+            setDownloadSuccessState("✔ Queued Directly to Gallery!")
+        }
+        return
+    }
+
+    val targetDir = DownloadHelper.getGalleryDirectory(fmt.isAudio)
+    val filename = DownloadHelper.filename(info.title, fmt.qualityBadge, fmt.isAudio)
+    val targetFile = File(targetDir, filename)
+    if (targetFile.exists()) targetFile.delete()
+
+    // High speed & resilience configuration (no warnings to block execution)
+    val request = YoutubeDLRequest(info.originalUrl).apply {
+        addOption("-o", targetFile.absolutePath)
+        addOption("--no-mtime")
+        addOption("--no-warnings")
+        addOption("--ignore-errors")
+        addOption("--no-check-certificate")
+        addOption("--no-playlist")
+        addOption("--concurrent-fragments", "8")
+        addOption("--retries", "10")
+        if (fmt.isAudio) {
+            addOption("-x")
+            addOption("--audio-format", "mp3")
+            addOption("--audio-quality", "0")
+        } else {
+            when (fmt.cobaltQuality) {
+                "2160" -> addOption("-f", "best[height<=?2160]/bestvideo[height<=?2160]+bestaudio/best")
+                "1080" -> addOption("-f", "best[height<=?1080]/bestvideo[height<=?1080]+bestaudio/best")
+                "720"  -> addOption("-f", "best[height<=?720]/bestvideo[height<=?720]+bestaudio/best")
+                "480"  -> addOption("-f", "best[height<=?480]/bestvideo[height<=?480]/best")
+                else   -> addOption("-f", "best/bestvideo+bestaudio")
+            }
+        }
+        // Enable resumable download on interruption
+        addOption("-c")
+    }
+
+    val processId = "DL_${System.currentTimeMillis()}"
+    scope.launch {
+        try {
+            withContext(Dispatchers.IO) {
+                YoutubeDL.getInstance().execute(request, processId, callback = { progress: Float, eta: Long, _: String ->
+                    scope.launch {
+                        val p = progress.toInt().coerceIn(0, 99)
+                        downloadProgressBar.progress = p
+                        tvTransformingText.text = if (eta > 0) "Downloading ($p%) — ETA: ${eta}s" else "Downloading ($p%)..."
+                    }
+                })
+            }
+
+            val mime = DownloadHelper.mimeType(fmt.isAudio, targetFile.name)
+            DownloadHelper.registerInGallery(this@MainActivity, targetFile, mime)
+            setDownloadSuccessState("✔ Saved directly to Phone Gallery!")
+        } catch (e: Exception) {
+            android.util.Log.e("ARM", "Download error", e)
+            // Show retry dialog
+            runOnUiThread {
+                val builder = androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                builder.setTitle("Download Interrupted")
+                    .setMessage("Connection was interrupted. Would you like to retry?")
+                    .setPositiveButton("Retry") { _, _ ->
+                        resetTransformingButton()
+                        startTransformingDownload(info, fmt)
+                    }
+                    .setNegativeButton("Cancel") { dialog, _ ->
+                        resetTransformingButton()
+                        dialog.dismiss()
+                    }
+                    .setCancelable(false)
+                    .show()
+            }
+        }
+    }
+}
         isDownloading = true
         layoutTransformingBtn.setBackgroundResource(R.drawable.btn_progress_bg)
         downloadProgressBar.progress = 0
